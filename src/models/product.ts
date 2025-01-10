@@ -6,9 +6,16 @@ const schema = new mongoose.Schema(
       type: String,
       required: [true, "Please enter Name"],
     },
-    photo: {
-      type: String,
-      required: [true, "Please enter Photo"],
+    photo :{
+      type: {public_id: {
+        type: String,
+        required: [true, "Please enter Public ID"],
+      },
+      url: {
+        type: String,
+        required: [true, "Please enter URL"],
+      },},
+      required: [true, "Photo is required"],
     },
     price: {
       type: Number,

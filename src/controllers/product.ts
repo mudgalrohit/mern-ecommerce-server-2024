@@ -9,7 +9,7 @@ import { Product } from "../models/product.js";
 import ErrorHandler from "../utils/utility-class.js";
 import { rm } from "fs";
 import { myCache } from "../app.js";
-import { invalidateCache } from "../utils/features.js";
+import { deleteFromCloudinary, invalidateCache, uploadToCloudinary } from "../utils/features.js";
 
 // Revalidate on New, Update, Delete Product and on New Order
 export const getlatestProducts = TryCatch(async (req, res, next) => {
@@ -87,15 +87,18 @@ export const newProduct = TryCatch(
       });
       return next(new ErrorHandler("Please enter All Fields", 400));
     }
-
+    const {public_id, url}= await uploadToCloudinary(photo.path);
     await Product.create({
       name,
       price,
       stock,
       category: category.toLowerCase(),
-      photo: photo.path,
+      photo: {public_id, url}
+    });//rm would not execute if code above this fails like uploadtocloduiary
+    //rm should be executed if upload to cloudinary works
+    rm(photo.path, () => {//this would execute if uploadToCloudinary works properly
+      console.log(" Photo Deleted from local storage");
     });
-
     invalidateCache({ product: true, admin: true });
 
     return res.status(200).json({
@@ -114,10 +117,14 @@ export const updateProduct = TryCatch(async (req, res, next) => {
   if (!product) return next(new ErrorHandler(" Product Not Found", 404));
 
   if (photo) {
-    rm(product.photo!, () => {
-      console.log("Old Photo Deleted");
+    const deletePhotoPromise = deleteFromCloudinary(product.photo.public_id);
+    const uploadPhotoPromise=  uploadToCloudinary(photo.path);
+    const result = await Promise.all([uploadPhotoPromise,deletePhotoPromise]);
+    rm(photo.path, () => {//this would execute if uploadToCloudinary works properly
+      console.log(" Photo Deleted from local storage");
     });
-    product.photo = photo.path;
+    product.photo.public_id = result[0].public_id;
+    product.photo.url = result[0].url;
   }
   if (name) product.name = name;
   if (price) product.price = price;
@@ -139,9 +146,7 @@ export const updateProduct = TryCatch(async (req, res, next) => {
 export const deleteProduct = TryCatch(async (req, res, next) => {
   const product = await Product.findById(req.params.id);
   if (!product) return next(new ErrorHandler(" Product Not Found", 404));
-  rm(product.photo!, () => {
-    console.log("Old Photo Deleted");
-  });
+  await deleteFromCloudinary(product.photo.public_id);
   await product.deleteOne();
   invalidateCache({
     product: true,
@@ -177,8 +182,8 @@ export const getAllProducts = TryCatch(
 
     const productsPromise = Product.find(baseQuery)
       .sort(sort && { price: sort === "asc" ? 1 : -1 })
-      .limit(limit)
-      .skip(skip);
+      .skip(skip)
+      .limit(limit);
 
     const [products, filteredOnlyProduct] = await Promise.all([
       productsPromise,

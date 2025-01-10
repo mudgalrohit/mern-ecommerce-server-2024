@@ -1,8 +1,37 @@
-import mongoose from "mongoose";
+import mongoose, { Document } from "mongoose";
+import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
 import { InvalidateCacheProps, OrderItemType } from "../types/types.js";
 import { myCache } from "../app.js";
 import { Product } from "../models/product.js";
 import { Order } from "../models/order.js";
+
+export const uploadToCloudinary = async (localFilePath: string) => {//return type of this
+  //is Promise<UploadApiResponse> because of async await
+  const promise = new Promise<UploadApiResponse>((resolve, reject) => {
+      cloudinary.uploader.upload(localFilePath, (error, result) => {
+        if (error) return reject(error);
+        resolve(result!);//this will give error without !
+        //<UploadApiResponse>|undefined not assignable to <UploadApiResponse>
+      });
+    });
+  const result = await promise;
+  return {
+    public_id: result.public_id,
+    url: result.secure_url,
+  };
+};
+
+export const deleteFromCloudinary = async (cloudPhotoId: string) => {//return type of this
+  //is Promise<void> because of async await
+  const promise = new Promise<void>((resolve, reject) => {
+      cloudinary.uploader.destroy(cloudPhotoId, (error, result) => {
+        if (error) return reject(error);
+        resolve();
+      });
+    });
+  await promise;
+};
+
 export const connectDB = (uri: string) => {
   mongoose
     .connect(uri, {

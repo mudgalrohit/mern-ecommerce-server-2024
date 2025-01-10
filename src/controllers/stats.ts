@@ -315,9 +315,9 @@ export const getBarCharts = TryCatch(async (req, res, next) => {
       twelveMonthOrdersPromise,
     ]);
 
-    const productCounts = getChartData({length: 6, today, docArr: products as unknown as MyDocument[]});
+    const productCounts = getChartData({length: 6, today, docArr: products});
     const usersCounts = getChartData({length: 6, docArr: users, today});
-    const ordersCounts = getChartData({length: 12, docArr: orders as unknown as MyDocument[], today});
+    const ordersCounts = getChartData({length: 12, docArr: orders, today});
     
     charts = {
       users: usersCounts,
@@ -355,10 +355,10 @@ export const getLineCharts = TryCatch(async (req,res,next) => {
       Order.find(baseQuery).select(["createdAt","discount", "total"]),
     ]);
 
-    const productCounts = getChartData({length: 12, today, docArr: products as unknown as MyDocument[]});
+    const productCounts = getChartData({length: 12, today, docArr: products});
     const usersCounts = getChartData({length: 12, docArr: users, today});
-    const discount = getChartData({length: 12,today, docArr: orders as unknown as MyDocument[], property: "discount",});
-    const revenue = getChartData({length: 12,today, docArr: orders as unknown as MyDocument[], property: "total",});
+    const discount = getChartData({length: 12,today, docArr: orders, property: "discount",});
+    const revenue = getChartData({length: 12,today, docArr: orders, property: "total",});
     
     charts = {
       users: usersCounts,

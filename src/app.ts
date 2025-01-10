@@ -4,7 +4,7 @@ import express from "express"
 import { connectDB } from "./utils/features.js";
 import { errorMiddleware } from "./middlewares/error.js";
 import NodeCache from "node-cache";
-
+import { v2 as cloudinary } from 'cloudinary';
 import morgan from "morgan";
 import Stripe from "stripe";
 import cors from "cors";
@@ -24,6 +24,12 @@ const mongoURI = process.env.MONGO_URI || "";
 const stripeKey = process.env.STRIPE_KEY || "";
 
 connectDB(mongoURI);
+
+cloudinary.config({
+    cloud_name: process.env.CLOUD_NAME,
+    api_key: process.env.CLOUD_API_KEY,
+    api_secret: process.env.CLOUD_API_SECRET,
+});
 
 export const stripe = new Stripe(stripeKey);
 
